@@ -19,7 +19,7 @@ We are trying to gather data from Reddit. Generally, we are focusing on titles o
 
  Reddit API allows us to retrieve update-to-date post and comment data. Prior to fetching the data, we need to create a Reddit account and then register an application to obtain API credentials (**client ID** and **client secret**) from [preferences (reddit.com)](https://www.reddit.com/prefs/apps). 
 
-![Alt Text](RedditCredential.jpg)
+![Alt Text](content/images/RedditCredential.jpg)
 
 
 **PRAW** is used to access Reddit's API. It send HTTP requests to Reddit’s API endpoints, specifying the necessary parameters such as subreddit name, sort type, time range, etc., depending on the data we want to fetch.
@@ -81,7 +81,7 @@ df_comments = pd.DataFrame(comments_data, columns=['Post Title', 'Post Time', 'C
 
 Below is some of the data collected, we format it into the following dataframe structure. It is then  we storge Reddit data as *csv* files locally for future use. For those topics, we will collect data of both posts and the stock price.
 
-![Dataset](Data.jpg)
+![Dataset](content/images/Data.jpg)
 
 In our project, we identify the following terms as topics. Both stock prices and Reddit data related to these topics will be futher collected.
 - **AI related Company:** Microsoft, Google, NVIDIA, AMD...
