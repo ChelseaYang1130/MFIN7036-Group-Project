@@ -5,7 +5,7 @@ This module contains base classes for dictionaries.
 import abc
 import os
 import numpy as np
-from pysentiment2.utils import Tokenizer
+from pysentiment2_updated.utils import Tokenizer
 
 
 STATIC_PATH = os.path.join(os.path.dirname(__file__), 'static')
@@ -45,13 +45,13 @@ class BaseDict(object):
     TAG_SUB = 'Subjectivity'
     TAG_POS = 'Positive'
     TAG_NEG = 'Negative'
-    pos_word = 'Positive words'
-    neg_word = 'Negative words'
     EPSILON = 1e-6
     
     def __init__(self, tokenizer=None):
         self._posset = set()
         self._negset = set()
+        self.pos_words = []
+        self.neg_words = []
         if tokenizer is None:
             self._tokenizer = Tokenizer()
         else:
@@ -93,8 +93,10 @@ class BaseDict(object):
         :returns: int
         """
         if term in self._posset:
+            self.pos_words.append(term)
             return +1
-        elif term in self._negset:
+        elif term in self._negset or term=="bubble":
+            self.neg_words.append(term)
             return -1
         else:
             return 0
@@ -119,14 +121,21 @@ class BaseDict(object):
         return {self.TAG_POS: s_pos,
                 self.TAG_NEG: s_neg,
                 self.TAG_POL: s_pol,
-                self.TAG_SUB: s_sub
+                self.TAG_SUB: s_sub,
+                "Positive words":set(self.pos_words),
+                "Negative words":set(self.neg_words),
+                "tokens":terms
+                # ,
+                # "postiveterm":self._posset,
+                # "negativeterm":self._negset
                 }
     
-    def get_words(self, term):
-        pos_words = []
-        neg_words = []
-        if term in self._posset:
-            pos_words.append(term)
-        elif term in self._negset:
-            neg_words.append(term)
-        return pos_words,neg_words
+    # def get_words(self, terms):
+    #     pos_words = []
+    #     neg_words = []
+    #     for term in terms:
+    #         if term in self._posset:
+    #             pos_words.append(term)
+    #         elif term in self._negset:
+    #             neg_words.append(term)
+    #     return pos_words,neg_words
