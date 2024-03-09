@@ -45,7 +45,8 @@ class BaseDict(object):
     TAG_SUB = 'Subjectivity'
     TAG_POS = 'Positive'
     TAG_NEG = 'Negative'
-    
+    pos_word = 'Positive words'
+    neg_word = 'Negative words'
     EPSILON = 1e-6
     
     def __init__(self, tokenizer=None):
@@ -118,4 +119,14 @@ class BaseDict(object):
         return {self.TAG_POS: s_pos,
                 self.TAG_NEG: s_neg,
                 self.TAG_POL: s_pol,
-                self.TAG_SUB: s_sub}
+                self.TAG_SUB: s_sub
+                }
+    
+    def get_words(self, term):
+        pos_words = []
+        neg_words = []
+        if term in self._posset:
+            pos_words.append(term)
+        elif term in self._negset:
+            neg_words.append(term)
+        return pos_words,neg_words
