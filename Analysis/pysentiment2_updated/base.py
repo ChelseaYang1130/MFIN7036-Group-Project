@@ -50,8 +50,6 @@ class BaseDict(object):
     def __init__(self, tokenizer=None):
         self._posset = set()
         self._negset = set()
-        self.pos_words = []
-        self.neg_words = []
         if tokenizer is None:
             self._tokenizer = Tokenizer()
         else:
@@ -93,10 +91,10 @@ class BaseDict(object):
         :returns: int
         """
         if term in self._posset:
-            self.pos_words.append(term)
+#             self.pos_words.append(term)
             return +1
-        elif term in self._negset or term=="bubble":
-            self.neg_words.append(term)
+        elif term in self._negset or term in ["fake","bubble"]:
+#             self.neg_words.append(term)
             return -1
         else:
             return 0
@@ -110,7 +108,19 @@ class BaseDict(object):
         :returns: dict
         """
         assert isinstance(terms, list) or isinstance(terms, tuple)
-        score_li = np.asarray([self._get_score(t) for t in terms])
+        
+        pos_words = []
+        neg_words = []
+        score_li = []
+        for term in terms:
+            score_li.append(self._get_score(term))
+            if term in self._posset:
+                pos_words.append(term)
+            elif term in self._negset or term in ["fake","bubble"]:
+                neg_words.append(term)
+
+    
+        score_li = np.asarray(score_li)
         
         s_pos = np.sum(score_li[score_li > 0])
         s_neg = -np.sum(score_li[score_li < 0])
@@ -122,20 +132,20 @@ class BaseDict(object):
                 self.TAG_NEG: s_neg,
                 self.TAG_POL: s_pol,
                 self.TAG_SUB: s_sub,
-                "Positive words":set(self.pos_words),
-                "Negative words":set(self.neg_words),
+                "Positive words":pos_words,
+                "Negative words":neg_words,
                 "tokens":terms
                 # ,
                 # "postiveterm":self._posset,
                 # "negativeterm":self._negset
                 }
     
-    # def get_words(self, terms):
-    #     pos_words = []
-    #     neg_words = []
-    #     for term in terms:
-    #         if term in self._posset:
-    #             pos_words.append(term)
-    #         elif term in self._negset:
-    #             neg_words.append(term)
-    #     return pos_words,neg_words
+    def get_words(self, terms):
+        pos_words = []
+        neg_words = []
+        for term in terms:
+            if term in self._posset:
+                pos_words.append(term)
+            elif term in self._negset:
+                neg_words.append(term)
+        return pos_words,neg_words

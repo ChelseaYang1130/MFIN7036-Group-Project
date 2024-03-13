@@ -16,7 +16,7 @@ from dash import dcc
 import dash_bootstrap_components as dbc
 
 from dash import html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.express as px
 from wordcloud import WordCloud
 
@@ -25,10 +25,9 @@ from wordcloud import WordCloud
 
 
 ## heatindex Wallstreetbets_topic
-    
 products = ['ChatGPT', 'Sora', 'Gemini']
 companies = ['NVDA','AMD','Microsoft','Google','OpenAI']
-subreddits = ['NVDA', 'OpenAi']
+subreddits = ['NVDA', 'OpenAI']
 
 
 # In[3]:
@@ -41,13 +40,9 @@ text_data_nvda = pq.read_table('data/bets_nvda_search.pq').to_pandas()['cbody'][
 # In[4]:
 
 
-# Sentimen score data 
-df = pd.read_parquet("output/data_sample_3w_output.pq") 
-
-topic_data = {
-}
-for i in subreddits:
-    topic_data[i] = list(df[df['subreddit']==i]['Polarity'])
+# Sentiment score data 
+wsb_topic_words = pd.read_parquet("output/wsb_topic_words.parquet")
+wsb_topics = list(set(wsb_topic_words['topic']))
 
 
 # In[5]:
@@ -60,13 +55,13 @@ stock_data = pd.read_parquet("output/stock_price.parquet")
 # In[6]:
 
 
-bet_topics = list(set(df[df['subreddit']=="WSB"]['topic']))
+# bet_topics = list(set(df[df['subreddit']=="WSB"]['topic']))
 
 
 # i want to generate a data dashboard with python plotly. the dashboard contains the following elements:
 # 1) a timeseries plot with stock prices; 2) word cloud, i need a button to choose the a topic; 3) timeseries of specific topic, i need a button to choose the topic
 
-# In[61]:
+# In[7]:
 
 
 SIDEBAR_STYLE = {
@@ -98,7 +93,7 @@ CARD_TEXT_STYLE = {
 }
 
 
-# In[62]:
+# In[8]:
 
 
 content_first_row = dbc.Row(
@@ -118,7 +113,7 @@ content_second_row = dbc.Row(
 )
 header2 = dbc.Row(
     [html.H4(
-    "Popularity Index and Stock Price over time", className="bg-primary text-white p-2 mb-2 text-center"
+    "Popularity Index and Stock Performance over time", className="bg-primary text-white p-2 mb-2 text-center"
     )]
 )
 
@@ -126,21 +121,36 @@ header2 = dbc.Row(
 content_third_row = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(id='product-polularity-index-timeseries-plot'), md=6
-        ),
+            dcc.Graph(id='product-polularity-index-timeseries-plot'), md=12
+        )
+    ]
+)
+
+content_third_row1 = dbc.Row(
+    [
         dbc.Col(
-            dcc.Graph(id='company-polularity-index-timeseries-plot'), md=6,
+            dcc.Graph(id='company-polularity-index-timeseries-plot'), md=12
         )
     ]
 )
 header3 = dbc.Row(
     [html.H4(
-    "Investor Sentiment over time", className="bg-primary text-white p-2 mb-2 text-center"
+    "Investor Sentiment in AI industry", className="bg-primary text-white p-2 mb-2 text-center"
     )]
+)
+content_fourth_row = dbc.Row(
+    [
+        dbc.Col(
+            dcc.Graph(id='pos_word_cloud'),md=6
+        ),
+        dbc.Col(
+            dcc.Graph(id='neg_word_cloud'),md=6
+        )
+    ]
 )
 
 
-# In[63]:
+# In[9]:
 
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -156,7 +166,6 @@ SIDEBAR_STYLE = {
 }
 
 
-
 # Create the controls card
 controls = dbc.Card(
     [
@@ -167,43 +176,40 @@ controls = dbc.Card(
             dbc.Checklist(
                 id='WallStreetBets-topic',
                 options=[{'label': x, 'value': x} for x in ['NVDA','AI']],
-                value=['NVDA'],
-#                 inline=True
+                value='NVDA',
+                inline=True
             )]
         ),
          html.Br(),
         html.P('AI Company', style={'textAlign': 'center'}),
-        dbc.Card(
-            dbc.Checklist(
-                id='company-dropdown',
-                options=[{'label': x, 'value': x} for x in companies],
-                value=['NVDA'],
-#                 inline=True
-            )
+        dcc.Dropdown(
+            id='company-dropdown',  # Unique ID for the AI company dropdown
+            options=[{'label': x, 'value': x} for x in companies],
+            value='NVDA',  # Default value
+            multi=False
         ),
         html.Br(),
         html.P('AI Product', style={'textAlign': 'center'}),
         dcc.Dropdown(
             id='product-dropdown',  # Unique ID for the AI product dropdown
             options=[{'label': x, 'value': x} for x in products],
-            value=['ChatGPT'],  # Default value
+            value='ChatGPT',  # Default value
             multi=False
         ),
-        html.P('Subreddit', style={'textAlign': 'center'}),
+        html.Br(),
+        html.P('WSB Topic \n (Investor Sentiment)', style={'textAlign': 'center'}),
         dcc.Dropdown(
-            id='subreddit-dropdown',  # Unique ID for the subreddit dropdown
-            options=[{'label': x, 'value': x} for x in subreddits],
-            value=['NVDA'],  # Default value
+            id='wsb_topics-dropdown',  # Unique ID for the subreddit dropdown
+            options=[{'label': x, 'value': x} for x in wsb_topics],
+            value='ChatGPT',  # Default value
             multi=False
         )
-        
-       
     ],
     body=True
 )
 
 
-# In[68]:
+# In[10]:
 
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -217,17 +223,18 @@ content = html.Div(
         content_first_row,
         content_second_row,
         header2,
+        content_third_row1,
         content_third_row,
-        header3
-#         ,
-#         content_fourth_row
+
+        header3,
+        content_fourth_row
     ],
     style=CONTENT_STYLE
 )
 
 sidebar = html.Div(
     [
-        html.H2('Parameters', style=TEXT_STYLE),
+        html.H2('Reddit Content', style=TEXT_STYLE),
         html.Hr(),
         controls
     ],
@@ -236,17 +243,19 @@ sidebar = html.Div(
 app.layout = html.Div([sidebar, content])
 
 
-# In[69]:
+# In[11]:
 
 
 # pip show dash-bootstrap-components
 @app.callback(
     Output('word-cloud', 'figure'),
     Input('WallStreetBets-topic', 'value')
+#     ,
+#     [State('WallStreetBets-topic', 'value')]
 )
 def update_word_cloud(selected_topic):
     # Generate word cloud
-    if selected_topic =="AI":
+    if selected_topic =="AI" or selected_topic is None:
         wordcloud = WordCloud(background_color = 'white',width=800, height=400).generate(text_data_ai)
     elif selected_topic =="NVDA":
         wordcloud = WordCloud(background_color = 'white',width=800, height=400).generate(text_data_nvda)
@@ -267,10 +276,15 @@ def update_word_cloud(selected_topic):
 @app.callback(
     Output('product-polularity-index-timeseries-plot', 'figure'),
     Input('product-dropdown', 'value')
+#     ,
+#     [State('product-dropdown', 'value')]
 )
 def update_topic_timeseries_plot(selected_product):
     # 创建图表
-    grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_product[0]))
+    if selected_product is None:
+        selected_product = products[0]
+    grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_product))
+    
     fig = go.Figure()
 
     # 添加 heat index 曲线
@@ -280,26 +294,26 @@ def update_topic_timeseries_plot(selected_product):
     fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue')))
 
     # 设置布局
-    fig.update_layout(title='AI Product: {}'.format(selected_product[0]),
+    fig.update_layout(title='AI Product: {}'.format(selected_product),
                       xaxis=dict(title='Time', tickangle=45),
-                      yaxis=dict(title='Popularity Index', side='left', showgrid=False, zeroline=False, color='firebrick'),
+                      yaxis=dict(title='AI Industry Index', side='left', showgrid=False, zeroline=False, color='firebrick'),
                       yaxis2=dict(title='Stock Price', side='right', overlaying='y', showgrid=False, zeroline=False, color='royalblue'))
 
-    # 显示图表
-    fig.show()
     return fig
 
 # Callback to update topic-specific timeseries plot
 @app.callback(
     Output('company-polularity-index-timeseries-plot', 'figure'),
     Input('company-dropdown', 'value')
+#     ,
+#     [State('company-dropdown', 'value')]
 )
 def update_topic_timeseries_plot_company(selected_company):
     # 创建图表
-    if selected_company =="OpenAI":
-        grouped = pd.read_parquet('output/HeatOutput/Subreddit/HeatData_bets_OpenAi.parquet')
+    if selected_company =="OpenAI" or selected_company is None:
+        grouped = pd.read_parquet('output/HeatOutput/Subreddit/HeatData_OpenAi.parquet')
     else:
-        grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_company[0]))
+        grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_company))
     fig = go.Figure()
 
     # 添加 heat index 曲线
@@ -309,17 +323,68 @@ def update_topic_timeseries_plot_company(selected_company):
     fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue')))
 
     # 设置布局
-    fig.update_layout(title='AI Company: {}'.format(selected_company[0]),
+    fig.update_layout(title='AI Company: {}'.format(selected_company),
                       xaxis=dict(title='Time', tickangle=45),
                       yaxis=dict(title='Popularity Index', side='left', showgrid=False, zeroline=False, color='firebrick'),
                       yaxis2=dict(title='Stock Price', side='right', overlaying='y', showgrid=False, zeroline=False, color='royalblue'))
 
     # 显示图表
-    fig.show()
     return fig
 
+
+@app.callback(
+    Output('pos_word_cloud', 'figure'),
+    Input('wsb_topics-dropdown', 'value')
+)
+def update_word_cloud_pos(selected_topic):
+    # Generate word cloud
+    if selected_topic is None:
+        selected_topic = wsb_topics[0]
+    text = list(wsb_topic_words[wsb_topic_words['topic']==selected_topic]['pos_word'])[0]
+    wordcloud = WordCloud(background_color = 'white',width=350, height=350).generate(text)
+    fig = px.imshow(wordcloud, title='Word Cloud')
+    fig.update_layout(
+        title="Positive words in comments",
+        margin=dict(l=10, r=10, t=3, b=3),
+        paper_bgcolor='white',  # Change paper background color to white
+        plot_bgcolor='white',   # Change plot background color to white
+        font=dict(family='Arial', size=12, color='White')
+    )
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_text="Positive words in comments")
+    return fig
+
+@app.callback(
+    Output('neg_word_cloud', 'figure'),
+    Input('wsb_topics-dropdown', 'value')
+)
+def update_word_cloud_pos(selected_topic):
+    # Generate word cloud
+    if selected_topic is None:
+        selected_topic = wsb_topics[0]
+    text = list(wsb_topic_words[wsb_topic_words['topic']==selected_topic]['neg_word'])[0]
+    wordcloud = WordCloud(background_color = 'white',width=400, height=400).generate(text)
+    fig = px.imshow(wordcloud, title='Word Cloud')
+    fig.update_layout(
+        title="Positive words in comments",
+        margin=dict(l=5, r=5, t=3, b=3),
+        paper_bgcolor='white',  # Change paper background color to white
+        plot_bgcolor='white',   # Change plot background color to white
+        font=dict(family='Arial', size=12, color='White')
+    )
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_text="Negative words in comments")
+    return fig
 if __name__ == '__main__':
     app.run_server(debug=True,port=8080)
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
