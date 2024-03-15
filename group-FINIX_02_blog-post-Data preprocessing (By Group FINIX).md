@@ -1,6 +1,6 @@
 ---
 Title: Data preprocessing (By Group "FINIX")
-Date: 2024-03-11 12:0
+Date: 2024-03-12 12:02
 Category: Progress Report
 Tags: Group FINIX
 ---
@@ -17,11 +17,17 @@ In last post, we mentioned about some special elements in our datasets. We now g
 
 ```
 sample = sample[~sample['Comment Body'].str.contains(':--|:--|:--|:--')] # filter comments containing table
+
+#or
+
+df_submissions = df_submissions[~(df_submissions['cdistinguished'] == 'moderator')]
 ```
 
 > [!NOTE]
 >
-> Tables are in format of **':--|:--|:--|:--'**. Those table usually contain advertisements. 
+> Tables are in format of **':--|:--|:--|:--'**. Those table usually contain advertisements. The advertisements are usually posted by the "moderator"s. They can be removed by simply filtering out the data 'cdistinguisied' == 'moderator'.
+
+![group-FINIX_02_image_image-advertisements ]({static}\images\group-FINIX_02_image_image-advertisements.jpg)
 
 - #### Remove markdown formatting string
 
@@ -32,6 +38,8 @@ sample['Comment Body'] = sample['Comment Body'].apply(strip_markdown.strip_markd
 > [!NOTE]
 >
 > **'strip_markdown'** is a python package that's used to remove the markdown formats.
+
+![group-FINIX_02_image_image-markdown]({static}\images\group-FINIX_02_image_image-markdown.jpg)
 
 - #### Remove URL
 
@@ -48,6 +56,8 @@ sample['Comment Body'] = sample['Comment Body'].apply(remove_urls) # remove urls
 >
 > URLs usually start with **'http\S+'**. 
 
+![group-FINIX_02_image_image-URL]({static}\images\group-FINIX_02_image_image-URL.jpg)
+
 - #### Remove returning line "\n"
 
 ```
@@ -57,6 +67,8 @@ sample['Comment Body'] = sample['Comment Body'].str.strip('\n')
 > [!NOTE]
 >
 > **'\n'** represents next line in the text.
+
+![group-FINIX_02_image_image-nextline]({static}\images\group-FINIX_02_image_image-nextline.jpg)
 
 - #### Remove Emoji
 
@@ -84,6 +96,8 @@ def remove_emoji(text):
 >
 > The U thing in the list is the **Unicode** of the emojis.
 
+![group-FINIX_02_image_image-emojis]({static}\images\group-FINIX_02_image_image-emojis.jpg)
+
 ## Problem in collecting data
 
 ### Fixed Number of Posts
@@ -106,7 +120,7 @@ while True:
 
 > [!NOTE]
 >
-> We guess that happens because there is a particularly large post with numerous comments, exceeding the package size limit for API responses. Therefore, we added sleep() function to pass the restriction period triggered by the `try-except`block.  Plus, we might adjust `limit` term according to our requirements
+> We guess that happens because there is a particularly large post with numerous comments, exceeding the package size limit for API responses. Therefore, we added sleep() function to pass the restriction period triggered by the `try-except`block.  Plus, we might adjust `limit` term according to our requirements.
 
 
 
