@@ -149,7 +149,19 @@ content_fourth_row = dbc.Row(
     ]
 )
 
+header4 = dbc.Row(
+    [html.H4(
+    "Sentiment Index and Stock Performance over time", className="bg-primary text-white p-2 mb-2 text-center"
+    )]
+)
 
+content_fifth_row = dbc.Row(
+    [
+            dbc.Col(
+                dcc.Graph(id='sentiment-index-timeseries-plot'), md=12
+            )
+        ]
+)
 # In[9]:
 
 
@@ -203,7 +215,18 @@ controls = dbc.Card(
             options=[{'label': x, 'value': x} for x in wsb_topics],
             value='ChatGPT',  # Default value
             multi=False
-        )
+        ),
+        html.Br(),
+        html.P('WSB Sentiment', style={'textAlign': 'center'}),
+        dbc.Card(
+                [
+                dbc.Checklist(
+                    id='WallStreetBets-topic-sentiment',
+                    options=['All WSB Topics'],
+                    value='All WSB Topics', # Default value
+                    inline=True
+                )]
+            )
     ],
     body=True
 )
@@ -225,9 +248,10 @@ content = html.Div(
         header2,
         content_third_row1,
         content_third_row,
-
         header3,
-        content_fourth_row
+        content_fourth_row,
+        header4,
+        content_fifth_row
     ],
     style=CONTENT_STYLE
 )
@@ -284,14 +308,14 @@ def update_topic_timeseries_plot(selected_product):
     if selected_product is None:
         selected_product = products[0]
     grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_product))
-    
+    grouped.set_index('time', inplace=True)
     fig = go.Figure()
 
     # 添加 heat index 曲线
-    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['heat_index'], mode='lines', name='Heat Index', line=dict(color='firebrick')))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['heat_index'], mode='lines', name='Heat Index', line=dict(color='firebrick'),connectgaps=True))
 
     # 添加 Close 曲线
-    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue')))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue'),connectgaps=True))
 
     # 设置布局
     fig.update_layout(title='AI Product: {}'.format(selected_product),
@@ -314,13 +338,15 @@ def update_topic_timeseries_plot_company(selected_company):
         grouped = pd.read_parquet('output/HeatOutput/Subreddit/HeatData_OpenAi.parquet')
     else:
         grouped = pd.read_parquet('output/HeatOutput/Wallstreetbets_topic/HeatData_bets_{}.parquet'.format(selected_company))
+
+    grouped.set_index('time',inplace=True)
     fig = go.Figure()
 
     # 添加 heat index 曲线
-    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['heat_index'], mode='lines', name='Heat Index', line=dict(color='firebrick')))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['heat_index'], mode='lines', name='Heat Index', line=dict(color='firebrick'),connectgaps=True))
 
     # 添加 Close 曲线
-    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue')))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Close'], mode='lines', name='Close', yaxis='y2', line=dict(color='royalblue'),connectgaps=True))
 
     # 设置布局
     fig.update_layout(title='AI Company: {}'.format(selected_company),
@@ -377,17 +403,43 @@ def update_word_cloud_pos(selected_topic):
     fig.update_yaxes(showticklabels=False)
     fig.update_layout(title_text="Negative words in comments")
     return fig
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+@app.callback(
+    Output('sentiment-index-timeseries-plot', 'figure'),
+    Input('WallStreetBets-topic-sentiment', 'value')
+)
+def update_sentiment_plot(selected):
+    # 创建图表
+    if selected == 'All WSB Topics' or selected is None:
+        grouped = pd.read_parquet('output/Sentiment_index_final.parquet')
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Polarity'], mode='lines', name='Polarity',yaxis='y1', line=dict(color='firebrick'),connectgaps=True))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['Subjectivity'], mode='lines',name='Subjectivity', yaxis='y1',  line=dict(color='royalblue'),connectgaps=True))
+    fig.add_trace(go.Scatter(x=grouped.index, y=grouped['close'], mode='lines', name='Stock Index', yaxis='y2',line=dict(color='green'),connectgaps=True))
+
+    # 设置布局
+    fig.update_layout(title='Polarity, Subjectivity, and Stock Index Over Time',
+                      xaxis=dict(title='Time', tickangle=45),
+                      yaxis=dict(title='Polarity/Subjectivity', side='left', showgrid=False, zeroline=False, color='firebrick'),
+                      yaxis2=dict(title='Stock Index', side='right', overlaying='y', showgrid=False, zeroline=False, color='green'))
+
+    # 显示图表
+    return fig
+
 if __name__ == '__main__':
     app.run_server(debug=True,port=8080)
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 
