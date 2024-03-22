@@ -1,4 +1,4 @@
-# MFIN7036-Group-Projectt
+# MFIN7036-Group-Project - *Group FINIX*
 
 **Below are our code files for the data analysis:**
 - *RedditDataAnalysis.ipynb*: python code for Reddit textual data analysis, including data preprocessing and sentiment analysis steps
